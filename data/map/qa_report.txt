@@ -1,0 +1,25 @@
+GEOMETRY CORRECTED  7.40(b)(4)(A)  American River (Sacramento Co.) From Nimbus Dam to the U.S. Geological
+§7.40: 123 entries in PDF, 117 on map, 0 missing
+§7.50: 171 entries in PDF, 169 on map, 1 missing
+   missing §7.50(b)(96) Miller Canyon Creek from Silverwood Lake  upstream (San Bernardino Co.)
+LINE MATCHED BY GEOMETRY  ['7.40(b)(33)']  Cottoneva Creek (Mendocino Co.). Main stem below the confluence of South Fork Co
+LINE MATCHED BY NONE      ['7.40(b)(60)(A)']  Mad River from the mouth to 200 yards upstream
+LINE MATCHED BY GEOMETRY  ['7.50(b)(104)(A)']  Upper Owens River from Benton Bridge road crossing upstream to Big Springs. Abov
+LINE MATCHED BY GEOMETRY  ['7.50(b)(104)(B)']  Upper Owens River from Benton Bridge road crossing to Crowley Lake
+LINE MATCHED BY GEOMETRY  ['7.50(b)(104)(C)']  Upper Owens River From Pleasant Valley Dam downstream to footbridge at lower end
+LINE MATCHED BY GEOMETRY  ['7.50(b)(104)(D)']  Upper Owens River From footbridge at lower end of Pleasant Valley Campground eas
+LINE MATCHED BY GEOMETRY  ['7.50(b)(112)']  Portuguese Creek, West Fork (Madera Co.) from headwaters downstream to confluenc
+LINE MATCHED BY GEOMETRY  ['7.50(b)(12)']  Big Tree Creek (Calaveras Co.) within Calaveras Big Trees State Park (upstream o
+LINE MATCHED BY NONE      ['7.50(b)(121)']  Rock Creek in the Hat Creek Drainage (Shasta Co.) from Rock Creek spring (origin
+LINE MATCHED BY GEOMETRY  ['7.50(b)(165)']  Whiskey Creek (Mono Co.) downstream from Crowley Lake Drive (old Highway 395)
+LINE MATCHED BY GEOMETRY  ['7.50(b)(171)']  Yuba River, North Fork (Sierra and Yuba Cos.) from the western boundary of Sierr
+LINE MATCHED BY NONE      ['7.50(b)(20)(B)']  Butt Valley Reservoir powerhouse outfall, from the powerhouse downstream to a ma
+LINE MATCHED BY NONE      ['7.50(b)(47)(F)']  Fall River Complex (Shasta and Siskiyou Co.) Ja She Creek
+LINE MATCHED BY NONE      ['7.50(b)(59)']  Hobart Creek (Tuolumne Co.), tributary to Spicer Meadows Reservoir.
+LINE MATCHED BY GEOMETRY  ['7.50(b)(70)(A)']  Kings River (Fresno Co.) South Fork from its trout confluence with Copper Creek 
+LINE MATCHED BY NONE      ['7.50(b)(90)(D)']  McCloud River and tributaries (Shasta and Siskiyou Cos.) - Sheepheaven Creek
+LINE MATCHED BY GEOMETRY  ['7.50(b)(97)']  Milton Lake and Middle Fork Yuba River between Milton Lake and Jackson Meadows D
+LINE MATCHED BY NONE      ['7.40(b)(50)(E)2.b.3']  Scotch Creek main stem downstream of barrier located approximately 3/4 mile upst
+LINE MATCHED BY NONE      ['7.50(b)(101)(B)']  Nelson Corral Reservoir tributary (the unnamed tributary entering the reservoir 
+LINE MATCHED BY GEOMETRY  ['7.50(b)(110)(C)']  From Pit No. 3 (Britton Dam) downstream to the outlet of the Pit No. 3 Powerhous
+LINE MATCHED BY GEOMETRY  ['7.50(b)(170)']  Yuba River, Middle Fork (Nevada and Sierra cos.) from Jackson Meadows Dam downst

@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# API response caches (rebuilt by the fetch_*.py scripts)
+data/cache/
+data/cache_cdfw/
+data/cache_default/
+
+# Raw inputs over GitHub's size limits: the .gz copies are committed instead
+data/default_waters.geojson
+data/cdfw_features.geojson
+data/streams.geojson
+
+# Local backups and scratch
+*.bak_*
+*.bak.*
+data/map_data.zip
+.claude/settings.local.json

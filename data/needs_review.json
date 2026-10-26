@@ -1,0 +1,411 @@
+{
+  "count": 58,
+  "items": [
+    {
+      "id": "7.40_24",
+      "name": "Calaveras River downstream from New Hogan Dam and the diverting canal (Mormon Slough) from Bellota Weir downstream to Interstate Highway 5",
+      "county": "Calaveras and San Joaquin",
+      "reason": "has_qualifier",
+      "qualifier_text": "from New Hogan Dam and the diverting canal (Mormon Slough) from Bellota Weir downstream to Interstate Highway 5"
+    },
+    {
+      "id": "7.40_25",
+      "name": "Carmel River and tributaries above Los Padres Dam",
+      "county": "Monterey",
+      "reason": "not_found",
+      "qualifier_text": "above Los Padres Dam"
+    },
+    {
+      "id": "7.40_26",
+      "name": "Carmel River below Los Padres Dam",
+      "county": "Monterey",
+      "reason": "has_qualifier",
+      "qualifier_text": "below Los Padres Dam"
+    },
+    {
+      "id": "7.40_33",
+      "name": "Cottoneva Creek",
+      "county": "Mendocino",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.40_39",
+      "name": "Earl Lake/Talawa",
+      "county": "Del Norte",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.40_43",
+      "name": "Feather River below Fish Barrier Dam",
+      "county": "Butte, Sutter and Yuba",
+      "reason": "has_qualifier",
+      "qualifier_text": "below Fish Barrier Dam"
+    },
+    {
+      "id": "7.40_47",
+      "name": "Guadalupe River below Guadalupe Reservoir",
+      "county": "Santa Clara",
+      "reason": "has_qualifier",
+      "qualifier_text": "below Guadalupe Reservoir"
+    },
+    {
+      "id": "7.40_50",
+      "name": "All anadromous Waters of the Klamath River Basin and Trinity River downstream of Lewiston Dam",
+      "county": "Del Norte, Humboldt, Siskiyou, and Trinity",
+      "reason": "not_found",
+      "qualifier_text": "downstream of Lewiston Dam"
+    },
+    {
+      "id": "7.40_54",
+      "name": "Limekiln Creek and tributaries above Highway 1",
+      "county": "Monterey",
+      "reason": "not_found",
+      "qualifier_text": "above Highway 1"
+    },
+    {
+      "id": "7.40_56",
+      "name": "Little Sur River and tributaries above Coast Road",
+      "county": "Monterey",
+      "reason": "not_found",
+      "qualifier_text": "above Coast Road"
+    },
+    {
+      "id": "7.40_74",
+      "name": "Pescadero Creek tributaries and main stem above the Stage Road bridge at Pescadero",
+      "county": "Santa Clara and San Mateo",
+      "reason": "not_found",
+      "qualifier_text": "above the Stage Road bridge at Pescadero"
+    },
+    {
+      "id": "7.40_76",
+      "name": "Redwood Creek and tidewaters",
+      "county": "Marin",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.40_80",
+      "name": "Sacramento River main stem below Keswick Dam",
+      "county": "Butte, Colusa, Contra Costa, Glenn, Sacramento, Shasta, Solano, Sutter, Tehama and Yolo",
+      "reason": "not_found",
+      "qualifier_text": "below Keswick Dam"
+    },
+    {
+      "id": "7.40_95",
+      "name": "San Mateo Creek and tributaries downstream from the falls between the Tenaja Road crossing and Fisherman’s Camp",
+      "county": "San Diego and Riverside",
+      "reason": "not_found",
+      "qualifier_text": "downstream from the falls between the Tenaja Road crossing and Fisherman’s Camp"
+    },
+    {
+      "id": "7.40_97",
+      "name": "Santa Margarita River and tributaries downstream from the Interstate Highway 15 bridge",
+      "county": "San Diego and Riverside",
+      "reason": "not_found",
+      "qualifier_text": "downstream from the Interstate Highway 15 bridge"
+    },
+    {
+      "id": "7.40_99",
+      "name": "Santa Ynez River and tributaries downstream from Bradbury Dam",
+      "county": "Santa Barbara",
+      "reason": "not_found",
+      "qualifier_text": "downstream from Bradbury Dam"
+    },
+    {
+      "id": "7.40_114",
+      "name": "Trinity River and tributaries downstream of Lewiston Dam",
+      "county": "",
+      "reason": "not_found",
+      "qualifier_text": "downstream of Lewiston Dam"
+    },
+    {
+      "id": "7.50_4",
+      "name": "American River, North Fork, Middle Fork, South Fork and their tributaries above Folsom Lake",
+      "county": "Placer, El Dorado, Amador, and Alpine",
+      "reason": "has_qualifier",
+      "qualifier_text": "above Folsom Lake"
+    },
+    {
+      "id": "7.50_14",
+      "name": "Boggy Creek",
+      "county": "Fresno",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_20",
+      "name": "Butt Creek and Butt Valley Reservoir Powerhouse Outfall",
+      "county": "Plumas",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_24",
+      "name": "Caples Creek from the confluence with the Silver Fork American River upstream to Caples Lake Dam",
+      "county": "El Dorado and Alpine",
+      "reason": "has_qualifier",
+      "qualifier_text": "from the confluence with the Silver Fork American River upstream to Caples Lake Dam"
+    },
+    {
+      "id": "7.50_26",
+      "name": "Cedar Creek and tributaries upstream from Moon Lake access road",
+      "county": "Lassen",
+      "reason": "not_found",
+      "qualifier_text": "upstream from Moon Lake access road"
+    },
+    {
+      "id": "7.50_31",
+      "name": "Corral Valley Creek and tributaries",
+      "county": "Alpine",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_32",
+      "name": "Cottonwood Creek and all tributaries upstream from the confluence of the main stem Cottonwood Creek and Little Cottonwood Creek, including the unnamed tributaries flowing through Horseshoe Meadow",
+      "county": "Inyo",
+      "reason": "not_found",
+      "qualifier_text": "upstream from the confluence of the main stem Cottonwood Creek and Little Cottonwood Creek, including the unnamed tributaries flowing through Horseshoe Meadow"
+    },
+    {
+      "id": "7.50_33",
+      "name": "Cottonwood Creek drainage lakes",
+      "county": "Inyo",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_35",
+      "name": "Cow Creek and tributaries upstream from Forest Service Road 9S10",
+      "county": "Fresno",
+      "reason": "not_found",
+      "qualifier_text": "upstream from Forest Service Road 9S10"
+    },
+    {
+      "id": "7.50_47",
+      "name": "Fall River Complex",
+      "county": "Shasta and Siskiyou",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_48",
+      "name": "Feather River North Fork from Belden Bridge downstream to Cresta Powerhouse (excluding reservoirs)",
+      "county": "Butte and Plumas",
+      "reason": "has_qualifier",
+      "qualifier_text": "from Belden Bridge downstream to Cresta Powerhouse"
+    },
+    {
+      "id": "7.50_51",
+      "name": "Golden Trout Wilderness Area",
+      "county": "Tulare",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_71",
+      "name": "Kirman (Carmen) Lake and all its tributaries",
+      "county": "Mono",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_73",
+      "name": "Non-anadromous tributaries of the Klamath River above Lakeview Road bridge",
+      "county": "",
+      "reason": "has_qualifier",
+      "qualifier_text": "above Lakeview Road bridge"
+    },
+    {
+      "id": "7.50_78",
+      "name": "Lee Vining Creek from the Lee Vining conduit downstream to Mono Lake",
+      "county": "Mono",
+      "reason": "has_qualifier",
+      "qualifier_text": "from the Lee Vining conduit downstream to Mono Lake"
+    },
+    {
+      "id": "7.50_79",
+      "name": "Little Butano Creek above the diversion dam at Butano State Park",
+      "county": "San Mateo",
+      "reason": "has_qualifier",
+      "qualifier_text": "above the diversion dam at Butano State Park"
+    },
+    {
+      "id": "7.50_83",
+      "name": "Lytle Creek and tributaries upstream of Interstate 15 bridge",
+      "county": "San Bernardino",
+      "reason": "not_found",
+      "qualifier_text": "upstream of Interstate 15 bridge"
+    },
+    {
+      "id": "7.50_87",
+      "name": "Martis Creek from the Martis Lake dam downstream to the confluence with the Truckee River",
+      "county": "Nevada",
+      "reason": "has_qualifier",
+      "qualifier_text": "from the Martis Lake dam downstream to the confluence with the Truckee River"
+    },
+    {
+      "id": "7.50_96",
+      "name": "Miller Canyon Creek from Silverwood Lake upstream",
+      "county": "San Bernardino",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_97",
+      "name": "Milton Lake and Middle Fork Yuba River between Milton Lake and Jackson Meadows Dam",
+      "county": "Nevada and Sierra",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_101",
+      "name": "Nelson Corral Reservoir and tributary",
+      "county": "Lassen",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_102",
+      "name": "Newlands Lake tributaries",
+      "county": "Lassen",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_103",
+      "name": "Nicasio Lake tributaries",
+      "county": "Marin",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_113",
+      "name": "Prosser Creek from the Prosser Reservoir dam downstream to the confluence with the Truckee River",
+      "county": "Nevada",
+      "reason": "has_qualifier",
+      "qualifier_text": "from the Prosser Reservoir dam downstream to the confluence with the Truckee River"
+    },
+    {
+      "id": "7.50_119",
+      "name": "Rock Creek Diversion Channel",
+      "county": "Mono",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_121",
+      "name": "Rock Creek in the Hat Creek Drainage",
+      "county": "Shasta",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_126",
+      "name": "Sacramento River and tributaries above Keswick Dam",
+      "county": "Shasta and Siskiyou",
+      "reason": "not_found",
+      "qualifier_text": "above Keswick Dam"
+    },
+    {
+      "id": "7.50_128",
+      "name": "Salmon Creek and tributaries above Highway 1",
+      "county": "Monterey",
+      "reason": "not_found",
+      "qualifier_text": "above Highway 1"
+    },
+    {
+      "id": "7.50_131",
+      "name": "Santa Ana River and tributaries upstream above Seven Oaks Dam. (San Bernardino Co.). See subsection (b)(8), Bear Creek",
+      "county": "San Bernardino",
+      "reason": "not_found",
+      "qualifier_text": "above Seven Oaks Dam."
+    },
+    {
+      "id": "7.50_132",
+      "name": "Santa Ynez River and tributaries upstream of Gibraltar Dam",
+      "county": "Santa Barbara",
+      "reason": "not_found",
+      "qualifier_text": "upstream of Gibraltar Dam"
+    },
+    {
+      "id": "7.50_134",
+      "name": "Sespe Creek and tributaries above Alder Creek confluence",
+      "county": "Ventura",
+      "reason": "not_found",
+      "qualifier_text": "above Alder Creek confluence"
+    },
+    {
+      "id": "7.50_136",
+      "name": "Silver Creek and all other tributaries to Sworinger Lake",
+      "county": "Modoc and Lassen",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_139",
+      "name": "Slinkard Creek and tributaries",
+      "county": "Mono",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_148",
+      "name": "Stevens Creek and all tributaries upstream of Stevens Creek Reservoir",
+      "county": "Santa Clara",
+      "reason": "not_found",
+      "qualifier_text": "upstream of Stevens Creek Reservoir"
+    },
+    {
+      "id": "7.50_149",
+      "name": "Stony Creek, and tributaries (including the North, South, and Middle forks) from the headwaters downstream to the diversion dam west of Stonyford in the center of Section 35, T18N, R7W",
+      "county": "Colusa, Glenn and Lake",
+      "reason": "has_qualifier",
+      "qualifier_text": "from the headwaters downstream to the diversion dam west of Stonyford in the center of Section 35, T18N, R7W"
+    },
+    {
+      "id": "7.50_151",
+      "name": "Sweetwater River and tributaries upstream of the Sweetwater Reservoir",
+      "county": "San Diego",
+      "reason": "not_found",
+      "qualifier_text": "upstream of the Sweetwater Reservoir"
+    },
+    {
+      "id": "7.50_153",
+      "name": "Trinity River, above Trinity Lake",
+      "county": "Trinity",
+      "reason": "has_qualifier",
+      "qualifier_text": "above Trinity Lake"
+    },
+    {
+      "id": "7.50_155",
+      "name": "Tule River and tributaries (Tulare Co.). Tule River, North Fork",
+      "county": "Tulare",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_160",
+      "name": "Upper Otay Lake",
+      "county": "San Diego",
+      "reason": "not_found",
+      "qualifier_text": null
+    },
+    {
+      "id": "7.50_161",
+      "name": "Upper Truckee River and tributaries upstream from confluence with Showers Creek",
+      "county": "Alpine and El Dorado",
+      "reason": "not_found",
+      "qualifier_text": "upstream from confluence with Showers Creek"
+    },
+    {
+      "id": "7.50_167",
+      "name": "Wolf Creek and tributaries (tributary to West Walker River)",
+      "county": "Mono",
+      "reason": "not_found",
+      "qualifier_text": null
+    }
+  ]
+}

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA Fishing Regulations Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#f6f7f5; --panel:#ffffff; --ink:#1d2a2f; --muted:#5f6d72; --line:#e3e7e6; --accent:#1f6f8b;
+  --open:#2b8a3e; --restr:#d9822b; --closed:#c92a2a; --unk:#8a959a;
+  --open-bg:#e6f4ea; --restr-bg:#fdf1e3; --closed-bg:#fbe9e9; --unk-bg:#eef1f2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);display:flex;overflow:hidden}
+#side{width:400px;min-width:320px;height:100vh;background:var(--panel);display:flex;flex-direction:column;border-right:1px solid var(--line);z-index:1000}
+#map{flex:1;height:100vh}
+header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;font-weight:700;letter-spacing:-.01em}
+header p{font-size:12px;color:var(--muted)}
+.controls{padding:10px 16px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.row{display:flex;gap:8px;align-items:center}
+.row label{font-size:12px;color:var(--muted);white-space:nowrap}
+input[type=date],input[type=search]{font:inherit;padding:6px 8px;border:1px solid #cfd6d5;border-radius:6px;background:#fff;color:var(--ink);width:100%}
+input[type=search]{padding-left:10px}
+button{font:inherit;font-size:12px;padding:6px 10px;border:1px solid #cfd6d5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+button:hover{background:#f0f3f2}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
+.sw{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.sw.thin{height:2px;opacity:.75}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;border-radius:0;border-bottom:2px solid transparent;background:none;padding:9px 6px;font-weight:600;color:var(--muted)}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:none}
+#body{flex:1;overflow:auto}
+.pane{display:none;padding:12px 16px 24px}
+.pane.on{display:block}
+.empty{color:var(--muted);font-size:13px;padding:8px 0}
+.empty b{color:var(--ink)}
+/* search results */
+#results{position:absolute;left:16px;right:16px;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:340px;overflow:auto;z-index:2000;display:none}
+#results div{padding:7px 10px;cursor:pointer;border-bottom:1px solid #f1f3f3;font-size:13px}
+#results div:hover,#results div.hi{background:#eef6f9}
+#results small{color:var(--muted)}
+.sbox{position:relative}
+/* detail */
+.dname{font-size:18px;font-weight:700;line-height:1.25}
+.dmeta{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}
+.pill.o{background:var(--open-bg);color:var(--open)} .pill.r{background:var(--restr-bg);color:#a65d12} .pill.c{background:var(--closed-bg);color:var(--closed)} .pill.u{background:var(--unk-bg);color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.card h3{font-size:13px;font-weight:700;margin-bottom:6px}
+.code{font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);background:#eef6f9;border-radius:4px;padding:1px 5px;margin-left:4px;white-space:nowrap}
+.rrow{padding:7px 0;border-top:1px dashed var(--line)}
+.rrow:first-of-type{border-top:0}
+.rloc{font-weight:600;font-size:13px}
+.rseason{font-size:13px}
+.rbag{font-size:13px;color:#33474d}
+.rbag:before{content:"Limit: ";color:var(--muted)}
+.note{background:#fff8e6;border:1px solid #f1d58c;border-radius:8px;padding:8px 10px;font-size:12.5px;margin:8px 0;color:#5c4710}
+.src{font-size:11.5px;color:var(--muted);margin-top:6px}
+/* calendar strip */
+.cal{display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin:8px 0 2px}
+.cal .m{display:flex;flex-direction:column;gap:1px}
+.cal .m span{font-size:9.5px;color:var(--muted);text-align:center}
+.cal .bar{display:flex;height:16px;border-radius:3px;overflow:hidden}
+.cal .bar i{flex:1}
+.cal .bar i.o{background:var(--open)} .cal .bar i.r{background:var(--restr)} .cal .bar i.c{background:var(--closed)} .cal .bar i.u{background:#ccd3d5}
+.cal .bar i.today{outline:2px solid var(--ink);outline-offset:-1px;position:relative;z-index:1}
+.calkey{font-size:11px;color:var(--muted);display:flex;gap:10px}
+details{border-top:1px solid var(--line);padding:8px 0}
+details summary{cursor:pointer;font-weight:600;font-size:13px;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details summary::-webkit-details-marker{display:none}
+details summary:after{content:"＋";color:var(--muted)}
+details[open] summary:after{content:"－"}
+details .count{color:var(--muted);font-weight:400}
+.item{padding:6px 0 6px 10px;border-left:2px solid var(--line);margin:6px 0 0 2px;font-size:12.5px}
+.item .t{font-weight:600}
+.item .sub{margin-left:8px}
+/* special list */
+.sl{display:flex;flex-direction:column}
+.sl div{padding:7px 0;border-bottom:1px solid #f1f3f3;cursor:pointer;display:flex;gap:8px;align-items:flex-start}
+.sl div:hover{background:#f6fafb}
+.sl .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+.sl .nm{font-size:13px;font-weight:600}
+.sl .sb{font-size:11.5px;color:var(--muted)}
+.fl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+/* loading / errors */
+#loading{position:fixed;inset:0;background:rgba(20,32,36,.86);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:24px}
+#loading h2{font-size:18px;margin-bottom:8px}
+#loading code{background:rgba(255,255,255,.18);padding:2px 6px;border-radius:4px}
+#loading a{color:#9fd8ee}
+.spin{width:36px;height:36px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:s .8s linear infinite;margin-bottom:14px}
+@keyframes s{to{transform:rotate(360deg)}}
+.leaflet-tooltip.wt{font:600 12px system-ui;padding:3px 7px}
+.zoomhint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);border:1px solid var(--line);padding:6px 12px;border-radius:999px;font-size:12px;z-index:900;box-shadow:0 2px 8px rgba(0,0,0,.1);pointer-events:none}
+.zoomhint.warn{background:#fff8e6;border-color:#f1d58c;color:#5c4710;max-width:80%;text-align:center}
+@media (max-width:760px){
+  body{flex-direction:column-reverse}
+  #side{width:100%;min-width:0;height:48vh;border-right:0;border-top:1px solid var(--line)}
+  #map{height:52vh}
+}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spin"></div><h2>Loading regulation data…</h2><p id="lmsg">rules.json</p></div>
+
+<aside id="side">
+  <header>
+    <h1>California Freshwater Fishing Regulations</h1>
+    <p>2026 regulations · click any stream or lake to see every rule that applies there</p>
+  </header>
+  <div class="controls">
+    <div class="sbox">
+      <input type="search" id="q" placeholder="Search a stream, river or lake…" autocomplete="off">
+      <div id="results"></div>
+    </div>
+    <div class="row">
+      <label for="date">Status on</label>
+      <input type="date" id="date" min="2026-01-01" max="2026-12-31">
+      <button id="today">Today</button>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--open)"></i>Open</span>
+      <span><i class="sw" style="background:var(--restr)"></i>Open, restricted (gear or 0 bag)</span>
+      <span><i class="sw" style="background:var(--closed)"></i>Closed</span>
+      <span><i class="sw thin" style="background:#4b8fb0"></i>Thin = general rules</span>
+    </div>
+    <div class="row">
+      <button id="tgDefault" class="on" title="Show waters under statewide / district general rules">General-rule waters</button>
+      <button id="tgLakes" class="on">Lakes</button>
+      <button id="locate" title="Zoom to my location">📍 Near me</button>
+    </div>
+  </div>
+  <div class="tabs"><button data-t="detail" class="on">Selected water</button><button data-t="special">Special-reg waters</button><button data-t="about">About</button></div>
+  <div id="body">
+    <div class="pane on" id="p-detail">
+      <div class="empty"><b>Click a stream or lake</b> on the map, or search above.<br><br>
+      Thick lines are waters with their own special regulations (§7.40 / §7.50). Thin lines follow the district or statewide general rules. Colors show whether fishing is open on the date above.<br><br>
+      Zoom in past the county level to see every named stream.</div>
+    </div>
+    <div class="pane" id="p-special">
+      <input type="search" id="sq" placeholder="Filter special-regulation waters…" style="margin-bottom:8px">
+      <div class="fl" id="sf"></div>
+      <div class="sl" id="slist"></div>
+    </div>
+    <div class="pane" id="p-about"></div>
+  </div>
+</aside>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+const YEAR = 2026;
+const TILE = 0.5, DETAIL_ZOOM = 10;
+const COLOR = {o:'#2b8a3e', r:'#d9822b', c:'#c92a2a', u:'#8a959a'};
+const LABEL = {o:'Open', r:'Open — restricted', c:'Closed', u:'Not determined'};
+const CAT = [
+  ['special','Other special regulations here'],
+  ['district','District general regulations (§7.00)'],
+  ['hours','Fishing hours (§3.00)'],
+  ['gear','Gear & methods (§2)'],
+  ['bait','Bait (§4)'],
+  ['species','Species limits & seasons (§5)'],
+  ['lowflow','Low-flow closures (§8)'],
+  ['critters','Amphibians, reptiles, crayfish & clams'],
+];
+const CRITTER_SECTIONS = new Set(['5.05','5.20','5.35','5.60']);
+
+let R, regimes, rulesets, rules;
+let doy = 0;
+let showDefault = true, showLakes = true;
+let selected = null, selectedLayer = null;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sec = c => (c.match(/^\d+\.\d+/)||[''])[0];
+
+// ── Map ──────────────────────────────────────────────────────────────────────
+const map = L.map('map', {preferCanvas:true, zoomControl:true}).setView([37.4, -119.6], 6);
+const renderer = L.canvas({tolerance: 7, padding: .3});
+const bases = {
+  'Topo (USGS)': L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, maxNativeZoom:16, attribution:'USGS The National Map'}),
+  'Streets (OSM)': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap contributors'}),
+  'Imagery (USGS)': L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, maxNativeZoom:16, attribution:'USGS The National Map'}),
+};
+bases['Topo (USGS)'].addTo(map);
+L.control.layers(bases, null, {collapsed:true}).addTo(map);
+const hl = L.layerGroup().addTo(map);   // selection highlight
+const hint = document.createElement('div'); hint.className='zoomhint'; hint.textContent='Zoom in to see every named stream'; document.getElementById('map').appendChild(hint);
+
+function statusOf(p){
+  const rg = regimes[p.r];
+  if (!rg || !rg.days) return 'u';
+  return rg.days[doy] || 'u';
+}
+function isSpecialKind(p){ return regimes[p.r].kind === 'special'; }
+function styleFor(p){
+  const st = statusOf(p), col = COLOR[st];
+  const special = isSpecialKind(p);
+  if (p.k === 'A'){   // special "X and tributaries" areas: outline only, the streams inside carry the color
+    return {renderer, color: col, weight: 1.5, opacity: .8, dashArray: '6 5', fillColor: col, fillOpacity: .05};
+  }
+  if (p.k === 'l' || p.k === 'L'){
+    return {renderer, color: col, weight: special ? 2 : 1, opacity: special ? .9 : .5, fillColor: col, fillOpacity: special ? .3 : .12};
+  }
+  const big = p.k === 'r' || p.k === 'S';
+  return {renderer, color: col, weight: special ? (map.getZoom() >= 12 ? 5 : 4) : (big ? 2.4 : 1.6), opacity: special ? .95 : .7, lineCap:'round'};
+}
+function visible(p){
+  if (!showLakes && (p.k === 'l' || p.k === 'L')) return false;
+  if (!showDefault && !isSpecialKind(p)) return false;
+  return true;
+}
+// Draw order: areas at the bottom, then lakes, then streams, special reaches on top
+const ORDER = {A:0, l:1, L:2, s:3, r:4, S:5};
+function sortFc(fc){ fc.features.sort((a,b) => (ORDER[a.properties.k] ?? 3) - (ORDER[b.properties.k] ?? 3)); return fc; }
+function makeLayer(fc){
+  // Clicks are handled once at map level (pickAt) so lakes, streams and areas under the
+  // cursor can all be found, whichever is drawn on top.
+  return L.geoJSON(fc, {
+    renderer,
+    filter: f => visible(f.properties),
+    style: f => styleFor(f.properties),
+    onEachFeature: (f, layer) => {
+      layer.bindTooltip(f.properties.n, {sticky:true, className:'wt', direction:'top', offset:[0,-6]});
+    }
+  });
+}
+
+// overview (low zoom) + tiles (high zoom)
+let overview = null;
+let manifest = null;          // Set of tile keys from tiles/index.json (null = no manifest)
+const tiles = new Map();      // key → {layer, fc} | 'loading' | 'none'
+const warn = document.createElement('div'); warn.className = 'zoomhint warn'; warn.style.display = 'none';
+warn.textContent = 'Detailed stream data is missing for part of this view. Showing simplified lines. Re-run build_map_data.py.';
+document.getElementById('map').appendChild(warn);
+function tileKeys(){
+  const b = map.getBounds();
+  const out = [];
+  for (let x = Math.floor(b.getWest()/TILE); x <= Math.floor(b.getEast()/TILE); x++)
+    for (let y = Math.floor(b.getSouth()/TILE); y <= Math.floor(b.getNorth()/TILE); y++){
+      const k = `${x}_${y}`;
+      if (!manifest || manifest.has(k)) out.push(k);
+    }
+  return out;
+}
+// Keep the overview on screen until every detail tile in view has loaded, and leave it
+// on (with a warning) if a tile listed in the manifest is missing from disk.
+function syncOverview(){
+  if (!overview || map.getZoom() < DETAIL_ZOOM) return;
+  const want = tileKeys();
+  const pending = want.some(k => tiles.get(k) === 'loading');
+  const missing = manifest ? want.filter(k => tiles.get(k) === 'none') : [];
+  const need = pending || missing.length > 0;
+  if (need && !map.hasLayer(overview.layer)) overview.layer.addTo(map);
+  if (!need && map.hasLayer(overview.layer)) map.removeLayer(overview.layer);
+  warn.style.display = missing.length ? '' : 'none';
+  if (missing.length) console.warn('Missing detail tiles:', missing.join(', '));
+}
+function refresh(){
+  const z = map.getZoom();
+  hint.style.display = z >= DETAIL_ZOOM ? 'none' : '';
+  if (z < DETAIL_ZOOM){
+    for (const t of tiles.values()) if (t.layer && map.hasLayer(t.layer)) map.removeLayer(t.layer);
+    if (overview && !map.hasLayer(overview.layer)) overview.layer.addTo(map);
+    warn.style.display = 'none';
+    return;
+  }
+  const want = new Set(tileKeys());
+  for (const [k, t] of tiles) if (t.layer && !want.has(k) && map.hasLayer(t.layer)) map.removeLayer(t.layer);
+  for (const k of want){
+    const t = tiles.get(k);
+    if (t && t.layer){ if (!map.hasLayer(t.layer)) t.layer.addTo(map); continue; }
+    if (t === 'loading' || t === 'none') continue;
+    tiles.set(k, 'loading');
+    fetch(`data/map/tiles/${k}.json`).then(r => r.ok ? r.json() : null).then(fc => {
+      if (!fc){ tiles.set(k, 'none'); return; }
+      const layer = makeLayer(sortFc(fc));
+      tiles.set(k, {layer, fc});
+      if (map.getZoom() >= DETAIL_ZOOM && tileKeys().includes(k)) layer.addTo(map);
+    }).catch(() => tiles.set(k, 'none')).finally(syncOverview);
+  }
+  syncOverview();
+}
+function activeLayers(){
+  const out = [];
+  if (overview && map.hasLayer(overview.layer)) out.push(overview.layer);
+  for (const t of tiles.values()) if (t && t.layer && map.hasLayer(t.layer)) out.push(t.layer);
+  return out;
+}
+
+// ── Point query ─────────────────────────────────────────────────────────────
+// Ray-cast against the projected rings Leaflet already holds for each polygon.
+function insideRings(parts, p){
+  let inside = false;
+  for (const ring of parts)
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+      const a = ring[i], b = ring[j];
+      if (((a.y > p.y) !== (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x)) inside = !inside;
+    }
+  return inside;
+}
+// Rank what is under the cursor: inside a lake beats a nearby stream line,
+// a stream line beats the area polygon it sits in.
+function hitsAt(latlng){
+  const pt = map.latLngToLayerPoint(latlng);
+  const best = new Map();
+  for (const g of activeLayers()) g.eachLayer(l => {
+    if (!l._pxBounds || !l._containsPoint || !l._containsPoint(pt)) return;
+    const p = l.feature.properties;
+    const poly = l instanceof L.Polygon;
+    const inside = poly && insideRings(l._parts, pt);
+    // The OSM lake outline carries the rule the build chose for the whole lake. CDFW
+    // special-lake polygons can be sub-areas (outlet zones, tributary mouths), so they rank second.
+    let rank;
+    if (p.k === 'L' || p.k === 'l') rank = inside ? (p.k === 'l' ? 0 : 1) : 4;
+    else if (p.k === 'A') rank = inside ? 5 : 6;
+    else rank = p.k === 'S' ? 2 : 3;
+    const key = `${p.n}|${p.r}|${p.k}`;
+    const prev = best.get(key);
+    if (!prev || rank < prev.rank) best.set(key, {rank, layer: l, f: l.feature});
+  });
+  // Drop a lake or area polygon that repeats a rule already listed (OSM lake + CDFW lake polygon)
+  const seenRule = new Set();
+  return [...best.values()].sort((a,b) => a.rank - b.rank).filter(h => {
+    const p = h.f.properties;
+    if ('lLA'.includes(p.k) && seenRule.has(p.r)) return false;
+    seenRule.add(p.r); return true;
+  });
+}
+let lastClickEv = null;
+function pickAt(e){
+  if (e.originalEvent && e.originalEvent === lastClickEv) return;
+  lastClickEv = e.originalEvent;
+  const h = hitsAt(e.latlng);
+  if (!h.length) return;
+  select(h[0].f, h[0].layer, h.map(x => x.f));
+}
+map.on('click', pickAt);
+function restyleAll(){
+  const redo = (t) => { const was = map.hasLayer(t.layer); if (was) map.removeLayer(t.layer); t.layer = makeLayer(t.fc); if (was) t.layer.addTo(map); };
+  if (overview) redo(overview);
+  for (const t of tiles.values()) if (t && t.layer) redo(t);
+  if (selected) renderDetail(selected);
+  renderSpecialList();
+}
+map.on('moveend zoomend', refresh);
+map.on('zoomend', () => { // line weights depend on zoom for special waters
+  for (const t of tiles.values()) if (t && t.layer && map.hasLayer(t.layer)) t.layer.setStyle(f => styleFor(f.properties));
+});
+
+// ── Selection & detail ──────────────────────────────────────────────────────
+let here = [];   // every water under the last click, for the "Also at this spot" list
+// Tiles cut a lake or stream into pieces. Gather the touching pieces with the same
+// name and rule so the whole water is highlighted, not just the clicked tile's piece.
+function piecesOf(f, layer){
+  const p = f.properties, key = `${p.n}|${p.r}|${p.k}`;
+  const cand = [];
+  for (const g of activeLayers()) g.eachLayer(l => { const q = l.feature.properties; if (`${q.n}|${q.r}|${q.k}` === key) cand.push(l); });
+  if (!layer) return cand.length ? cand.map(l => l.feature) : [f];
+  const group = [layer], used = new Set([layer]);
+  for (let grew = true; grew;){
+    grew = false;
+    for (const l of cand){
+      if (used.has(l)) continue;
+      const b = l.getBounds().pad(0.02);
+      if (group.some(m => m.getBounds().intersects(b))){ group.push(l); used.add(l); grew = true; }
+    }
+  }
+  return group.map(l => l.feature);
+}
+function select(f, layer, list){
+  selected = f.properties;
+  here = list && list.length > 1 ? list : [];
+  hl.clearLayers();
+  const fc = {type:'FeatureCollection', features: piecesOf(f, layer)};
+  // same canvas as the data: a second canvas on top would swallow hover and clicks
+  L.geoJSON(fc, {renderer, style: {color:'#ffe066', weight: 12, opacity: .55, fillOpacity:.15, fillColor:'#ffe066'}, interactive:false}).addTo(hl);
+  L.geoJSON(fc, {renderer, style: {color:'#111', weight: 2, opacity: .9, dashArray:'4 4', fill:false}, interactive:false}).addTo(hl);
+  showTab('detail');
+  renderDetail(selected);
+}
+function alsoHereHtml(){
+  if (!here.length) return '';
+  const KIND = {r:'river', s:'stream', l:'lake', S:'special reach', L:'special lake', A:'special area'};
+  const rows = here.map((f, i) => {
+    const p = f.properties;
+    if (p === selected) return '';
+    const st = statusOf(p);
+    return `<div data-h="${i}"><span class="dot" style="background:${COLOR[st]}"></span><span><span class="nm">${esc(p.n)}</span><br><span class="sb">${esc(KIND[p.k]||'')} · ${esc(LABEL[st])}</span></span></div>`;
+  }).join('');
+  return rows ? `<div class="card"><h3>Also at this spot</h3><div class="sl" id="alsohere">${rows}</div></div>` : '';
+}
+document.getElementById('p-detail').addEventListener('click', ev => {
+  const d = ev.target.closest('#alsohere div[data-h]');
+  if (!d) return;
+  const f = here[+d.dataset.h];
+  let layer = null;
+  for (const g of activeLayers()) g.eachLayer(l => { if (!layer && l.feature === f) layer = l; });
+  select(f, layer, here);
+});
+function rowsHtml(rows){
+  return rows.filter(r => r.loc || r.season || r.bag).map(r => `
+    <div class="rrow">
+      ${r.loc && !r.cont ? `<div class="rloc">${esc(r.loc)}</div>` : ''}
+      ${r.season ? `<div class="rseason">${esc(r.season)}</div>` : ''}
+      ${r.bag ? `<div class="rbag">${esc(r.bag)}</div>` : ''}
+    </div>`).join('');
+}
+function ruleBody(c){
+  const r = rules[c];
+  if (!r) return `<div class="item"><span class="code">§${esc(c)}</span></div>`;
+  const rows = (r.rows||[]).length ? rowsHtml(r.rows) : '';
+  const text = r.text ? `<div>${esc(r.text)}</div>` : '';
+  return rows + text;
+}
+// parent subsections give the context for a child rule ("(E) Shasta, Siskiyou …" lives under
+// "(b)(2) Fishing hours are … except in the following areas")
+function parentOf(c){ const i = c.lastIndexOf('('); return i > 0 ? c.slice(0, i) : null; }
+function depth(c){ return Math.max(0, (c.match(/\(/g)||[]).length - 0); }
+function codeKey(c){ return c.replace(/\((\d+)\)/g, (m,n) => '(' + n.padStart(3,'0') + ')'); }
+function withAncestors(list){
+  const set = new Set(list);
+  for (const c of list){ let p = parentOf(c); while (p){ if (rules[p]) set.add(p); p = parentOf(p); } }
+  return [...set].sort((a,b) => codeKey(a) < codeKey(b) ? -1 : 1);
+}
+function calendar(days){
+  if (!days) return '<div class="empty">The season for this water could not be read from the regulation text — see the text above.</div>';
+  const mons = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  let d0 = 0, html = '<div class="cal">';
+  for (let m = 0; m < 12; m++){
+    const n = new Date(YEAR, m+1, 0).getDate();
+    let bar = '';
+    for (let i = 0; i < n; i++){ const k = d0+i; bar += `<i class="${days[k]||'u'}${k===doy?' today':''}" title="${dateLabel(k)}: ${LABEL[days[k]||'u']}"></i>`; }
+    html += `<div class="m"><div class="bar">${bar}</div><span>${mons[m]}</span></div>`;
+    d0 += n;
+  }
+  return html + '</div><div class="calkey"><span>2026 season at a glance</span><span>▮ outline = selected date</span></div>';
+}
+function dateLabel(k){ const d = new Date(YEAR,0,1+k); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+
+function renderDetail(p){
+  const rg = regimes[p.r], rs = rulesets[p.s];
+  const st = statusOf(p);
+  const kindName = {r:'River', s:'Stream', l:'Lake / reservoir', S:'Special-regulation reach', L:'Special-regulation lake', A:'Special-regulation area'}[p.k] || '';
+  let h = `<div class="dname">${esc(p.n)}</div>
+    <div class="dmeta">${esc(kindName)}${rs.district ? ' · ' + esc(rs.district) + ' District' : ''}</div>
+    <div><span class="pill ${st}">${LABEL[st]} on ${esc(dateLabel(doy))}</span></div>`;
+
+  // Governing rule
+  let gov = '';
+  const codes = rg.codes.map(c => `<span class="code">§${esc(c)}</span>`).join('');
+  if (rg.kind === 'statewide'){
+    const c = rg.codes[0];
+    gov = `<h3>Governing rule: statewide trout regulations ${codes}</h3>${ruleBody(c)}
+      <div class="src">No special regulation (§7.40 / §7.50) or district rule (§7.00) is listed for this ${p.k==='l'?'lake':'stream'}, so the general statewide trout regulation applies.</div>`;
+  } else {
+    const head = rg.title && rg.title !== rg.reach ? `<div class="rloc" style="margin-bottom:4px">${esc(rg.title)}</div>` : '';
+    gov = `<h3>Governing rule: ${rg.kind==='district' ? 'district general regulation' : 'special regulation'} ${codes}</h3>${head}`;
+    gov += rg.codes.map(ruleBody).join('');
+    if (rg.anadromous_only){
+      const sw = rules['5.85(a)(2)'];
+      gov += `<div class="note"><b>Applies to anadromous waters</b> — water accessible to salmon and steelhead from the ocean (below the first impassable barrier or dam). Upstream of a barrier, the statewide stream rule applies instead: ${esc((sw && sw.text) || 'last Sat. in Apr. through Nov. 15, 5 trout; rest of year 0 trout, artificial lures with barbless hooks.')}</div>`;
+    }
+    if (rg.note) gov += `<div class="note">${esc(rg.note)}</div>`;
+  }
+  h += `<div class="card">${gov}${calendar(rg.days)}</div>`;
+  h += alsoHereHtml();
+
+  // Everything else that applies here
+  const groups = {};
+  for (const c of rs.codes){
+    const r = rules[c]; if (!r) continue;
+    let cat = r.cat;
+    if (CRITTER_SECTIONS.has(sec(c))) cat = 'critters';
+    if (!CAT.find(x => x[0] === cat)) continue;
+    (groups[cat] = groups[cat] || []).push(c);
+  }
+  let more = '';
+  for (const [cat, label] of CAT){
+    const cs = groups[cat]; if (!cs || !cs.length) continue;
+    // group codes by section so parents act as headers
+    const bySec = {};
+    for (const c of cs){ (bySec[sec(c)] = bySec[sec(c)] || []).push(c); }
+    let inner = '';
+    for (const s of Object.keys(bySec).sort((a,b)=>parseFloat(a)-parseFloat(b))){
+      const list = withAncestors(bySec[s]);
+      const title = (rules[list[0]] && rules[list[0]].title) || ('§' + s);
+      inner += `<div class="item"><div class="t">${esc(title)} <span class="code">§${esc(s)}</span></div>` +
+        list.filter(c => c !== s || (rules[c] && (rules[c].text||'').length > 0 && !/^[^—]{0,60}$/.test(rules[c].text)))
+            .map(c => `<div class="sub" style="margin-left:${8*depth(c)}px">${ruleBody(c)}</div>`).join('') + `</div>`;
+    }
+    more += `<details${cat==='hours'||cat==='special'?' open':''}><summary>${esc(label)} <span class="count">${Object.keys(bySec).length}</span></summary>${inner}</details>`;
+  }
+  // Statewide rules (apply everywhere unless a rule above says otherwise)
+  const swBySec = {};
+  for (const c of (R.statewide||[])){
+    if (!rules[c]) continue;
+    const s = sec(c);
+    if (s === '5.85') continue;               // statewide trout rule is shown as the governing rule
+    (swBySec[s] = swBySec[s] || []).push(c);
+  }
+  const swSecs = Object.keys(swBySec).sort((a,b)=>parseFloat(a)-parseFloat(b));
+  if (swSecs.length){
+    let inner = '';
+    for (const s of swSecs){
+      const list = swBySec[s];
+      const title = (rules[list[0]] && rules[list[0]].title) || ('§' + s);
+      inner += `<details style="border:0;padding:4px 0 0 8px"><summary style="font-weight:500">${esc(title)} <span class="code">§${esc(s)}</span></summary>` +
+        list.map(c => `<div class="item">${ruleBody(c)}</div>`).join('') + `</details>`;
+    }
+    more += `<details><summary>Statewide rules — apply everywhere unless a rule above says otherwise <span class="count">${swSecs.length}</span></summary>${inner}</details>`;
+  }
+  if (more) h += `<div class="card"><h3>Also applies here</h3>${more}</div>`;
+  h += `<div class="src">Always confirm with the official 2026 Freshwater Sport Fishing Regulations and any emergency closures before fishing. Regulation text from CDFW; stream lines from CDFW and OpenStreetMap.</div>`;
+  document.getElementById('p-detail').innerHTML = h;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(t){
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+
+// ── Search ───────────────────────────────────────────────────────────────────
+let S = [];
+const qEl = document.getElementById('q'), resEl = document.getElementById('results');
+let hits = [], hi = -1;
+function doSearch(){
+  const q = qEl.value.trim().toLowerCase();
+  if (q.length < 2){ resEl.style.display = 'none'; return; }
+  const words = q.split(/\s+/);
+  hits = [];
+  for (const e of S){
+    const n = e[0].toLowerCase();
+    if (words.every(w => n.includes(w))){
+      const rg = regimes[e[3]];
+      const score = (n.startsWith(q) ? 0 : 1) + (rg.kind === 'special' ? 0 : .5);
+      hits.push([score, e]);
+      if (hits.length > 400) break;
+    }
+  }
+  hits.sort((a,b) => a[0]-b[0] || a[1][0].localeCompare(b[1][0]));
+  hits = hits.slice(0, 40).map(h => h[1]);
+  hi = -1;
+  resEl.innerHTML = hits.length ? hits.map((e,i) => {
+    const rg = regimes[e[3]];
+    const what = rg.kind === 'special' ? ('§' + rg.codes[0]) : rg.kind === 'district' ? 'district rule' : 'statewide rule';
+    const t = {r:'river',s:'stream',l:'lake',S:'special reach',L:'special lake',A:'special area'}[e[4]] || '';
+    return `<div data-i="${i}">${esc(e[0])} <small>· ${t} · ${esc(what)} · ${e[1].toFixed(2)}, ${e[2].toFixed(2)}</small></div>`;
+  }).join('') : '<div><small>No named water matches.</small></div>';
+  resEl.style.display = 'block';
+}
+function goTo(e){
+  resEl.style.display = 'none';
+  const b = e[5];
+  if (b && b[2] - b[0] > 0.002) map.fitBounds([[b[1], b[0]], [b[3], b[2]]], {maxZoom: 13, padding:[30,30]});
+  else map.setView([e[1], e[2]], 13);
+  // select once the water is on screen (overview at low zoom, a detail tile at high zoom)
+  const tryPick = (n) => {
+    const busy = map.getZoom() >= DETAIL_ZOOM && tileKeys().some(k => tiles.get(k) === 'loading');
+    if (!busy){
+      const pt = L.latLng(e[1], e[2]);
+      let found = null, near = Infinity;
+      for (const g of activeLayers()) g.eachLayer(l => {
+        const p = l.feature.properties;
+        if (p.n !== e[0] || p.r !== e[3]) return;
+        const d = l.getBounds().contains(pt) ? 0 : l.getBounds().getCenter().distanceTo(pt);
+        if (d < near){ near = d; found = l; }
+      });
+      if (found) return select(found.feature, found);
+    }
+    if (n > 0) setTimeout(() => tryPick(n-1), 300);
+  };
+  setTimeout(() => tryPick(15), 400);
+}
+qEl.addEventListener('input', doSearch);
+qEl.addEventListener('keydown', ev => {
+  const items = resEl.querySelectorAll('div[data-i]');
+  if (ev.key === 'ArrowDown'){ hi = Math.min(hi+1, items.length-1); }
+  else if (ev.key === 'ArrowUp'){ hi = Math.max(hi-1, 0); }
+  else if (ev.key === 'Enter'){ if (hits.length) goTo(hits[Math.max(hi,0)]); return; }
+  else if (ev.key === 'Escape'){ resEl.style.display = 'none'; return; }
+  else return;
+  ev.preventDefault();
+  items.forEach((d,i) => d.classList.toggle('hi', i === hi));
+});
+resEl.addEventListener('click', ev => { const d = ev.target.closest('div[data-i]'); if (d) goTo(hits[+d.dataset.i]); });
+document.addEventListener('click', ev => { if (!ev.target.closest('.sbox')) resEl.style.display = 'none'; });
+
+// ── Special-regulation list ──────────────────────────────────────────────────
+let spFilter = 'all';
+function specialEntries(){
+  // one row per special regime, positioned via the search index
+  const pos = {};
+  for (const e of S){ const rg = regimes[e[3]]; if (rg.kind === 'special' && !pos[e[3]]) pos[e[3]] = e; }
+  const out = [];
+  regimes.forEach((rg, i) => { if (rg.kind === 'special' && pos[i]) out.push([rg, pos[i], i]); });
+  out.sort((a,b) => (a[0].title||'').localeCompare(b[0].title||'') || (a[0].reach||'').localeCompare(b[0].reach||''));
+  return out;
+}
+let SPECIAL = [];
+function renderSpecialList(){
+  const q = document.getElementById('sq').value.trim().toLowerCase();
+  const el = document.getElementById('slist');
+  let n = 0, html = '';
+  for (const [rg, e] of SPECIAL){
+    const st = rg.days ? (rg.days[doy]||'u') : 'u';
+    if (spFilter !== 'all' && st !== spFilter) continue;
+    const text = (rg.title + ' ' + rg.reach).toLowerCase();
+    if (q && !text.includes(q)) continue;
+    n++;
+    const sub = rg.reach && rg.reach !== rg.title ? rg.reach : '';
+    html += `<div data-k="${regimes.indexOf(rg)}"><span class="dot" style="background:${COLOR[st]}"></span><span><span class="nm">${esc(rg.title)}</span> <span class="code">§${esc(rg.codes[0])}</span>${sub ? `<br><span class="sb">${esc(sub)}</span>` : ''}</span></div>`;
+  }
+  for (const u of (R.unmapped||[])){
+    if (q && !u.name.toLowerCase().includes(q)) continue;
+    html += `<div data-u="${esc(u.code)}"><span class="dot" style="background:#bbb"></span><span><span class="nm">${esc(u.name)}</span> <span class="code">§${esc(u.code)}</span><br><span class="sb">Location not mapped — ${esc(u.note)}</span></span></div>`;
+  }
+  el.innerHTML = `<div style="cursor:default;color:var(--muted);font-size:12px">${n} reaches / areas</div>` + html;
+}
+document.getElementById('sq').addEventListener('input', renderSpecialList);
+document.getElementById('slist').addEventListener('click', ev => {
+  const d = ev.target.closest('div[data-k]');
+  if (d){ const row = SPECIAL.find(x => x[2] === +d.dataset.k); if (row) goTo(row[1]); return; }
+  const u = ev.target.closest('div[data-u]');
+  if (u){ const x = R.unmapped.find(v => v.code === u.dataset.u); if (x){ map.setView([x.lat, x.lng], 12);
+    document.getElementById('p-detail').innerHTML = `<div class="dname">${esc(x.name)}</div><div class="card"><h3>Special regulation <span class="code">§${esc(x.code)}</span></h3>${rowsHtml(x.rows)}<div class="note">${esc(x.note)}</div></div>`; showTab('detail'); } }
+});
+function renderFilters(){
+  const el = document.getElementById('sf');
+  el.innerHTML = [['all','All'],['o','Open'],['r','Restricted'],['c','Closed']].map(([k,l]) => `<button data-f="${k}" class="${spFilter===k?'on':''}">${l}</button>`).join('') + `<span style="font-size:12px;color:var(--muted);align-self:center">on ${esc(dateLabel(doy))}</span>`;
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { spFilter = b.dataset.f; renderFilters(); renderSpecialList(); });
+}
+
+// ── Date & toggles ──────────────────────────────────────────────────────────
+const dateEl = document.getElementById('date');
+function setDate(d){
+  d = new Date(YEAR, d.getMonth(), d.getDate());   // calendar date only (no time of day)
+  const start = new Date(YEAR,0,1);
+  doy = Math.max(0, Math.min(364, Math.round((d - start) / 864e5)));
+  dateEl.value = `${YEAR}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+dateEl.addEventListener('change', () => { const [y,m,d] = dateEl.value.split('-').map(Number); if (m){ setDate(new Date(YEAR, m-1, d)); renderFilters(); restyleAll(); } });
+document.getElementById('today').onclick = () => { setDate(new Date()); renderFilters(); restyleAll(); };
+document.getElementById('tgDefault').onclick = function(){ showDefault = !showDefault; this.classList.toggle('on', showDefault); restyleAll(); };
+document.getElementById('tgLakes').onclick = function(){ showLakes = !showLakes; this.classList.toggle('on', showLakes); restyleAll(); };
+document.getElementById('locate').onclick = () => map.locate({setView:true, maxZoom:12});
+map.on('locationerror', () => alert('Could not get your location.'));
+
+// ── About ────────────────────────────────────────────────────────────────────
+function renderAbout(){
+  const m = R.meta || {};
+  const nSpecial = regimes.filter(r => r.kind === 'special').length;
+  document.getElementById('p-about').innerHTML = `
+    <h3 style="font-size:14px;margin-bottom:6px">How each water gets its rules</h3>
+    <p style="margin-bottom:8px">Every named stream is split wherever a regulation begins or ends. Each piece takes its governing rule in this order:</p>
+    <ol style="margin:0 0 10px 18px">
+      <li>A special regulation reach or area for that water (§7.40(b), §7.50(b)) — ${nSpecial} on the map</li>
+      <li>The district general regulation (§7.00), e.g. North Central District streams closed all year</li>
+      <li>The statewide trout regulation (§5.85): streams open last Sat. in Apr. – Nov. 15 (5 trout), 0 trout with artificial barbless lures the rest of the year; lakes open all year (5 trout)</li>
+    </ol>
+    <p style="margin-bottom:8px">Fishing hours, bait, gear and species rules that cover the location are listed with every water.</p>
+    <p style="margin-bottom:8px">Tributary networks such as <i>Tahoe Lake tributaries upstream to the first lake</i> are traced along the stream network, so streams like the Upper Truckee River pick up the rule.</p>
+    <h3 style="font-size:14px;margin:12px 0 6px">Limits</h3>
+    <ul style="margin:0 0 10px 18px">
+      <li>Only named streams are drawn (OpenStreetMap). Unnamed tributaries follow the same rules as the area they are in.</li>
+      <li>"Anadromous waters" rules are shown where CDFW maps them; the exact barrier where they stop is not mapped.</li>
+      <li>Emergency closures and in-season changes are not included.</li>
+    </ul>
+    <p class="src">Data: ${esc((m.sources||[]).join('; '))}. Built ${esc(m.generated||'')}.</p>`;
+}
+
+// ── Load ─────────────────────────────────────────────────────────────────────
+async function load(){
+  const lov = document.getElementById('loading'), lmsg = document.getElementById('lmsg');
+  try {
+    lmsg.textContent = 'rules.json';
+    R = await (await fetch('data/map/rules.json')).json();
+    regimes = R.regimes; rulesets = R.rulesets; rules = R.rules;
+    lmsg.textContent = 'overview + search index';
+    const [ov, s, man] = await Promise.all([
+      fetch('data/map/overview.json').then(r => r.json()),
+      fetch('data/map/search.json').then(r => r.json()),
+      fetch('data/map/tiles/index.json').then(r => r.ok ? r.json() : null).catch(() => null)]);
+    S = s;
+    if (man && man.tiles) manifest = new Set(Object.keys(man.tiles));
+    else console.warn('data/map/tiles/index.json not found: cannot check for missing detail tiles');
+    overview = {fc: sortFc(ov), layer: makeLayer(ov)};
+    setDate(new Date());
+    SPECIAL = specialEntries();
+    renderFilters(); renderSpecialList(); renderAbout();
+    refresh();
+    lov.style.display = 'none';
+  } catch (err) {
+    lov.querySelector('.spin').style.display = 'none';
+    lov.querySelector('h2').textContent = 'Error loading data';
+    const fileMode = location.protocol === 'file:';
+    lmsg.innerHTML = fileMode || err instanceof TypeError
+      ? `<b>${fileMode ? 'This page was opened directly from disk, so the browser blocks it from loading the data files.' : 'Could not reach the local server — it may have been stopped.'}</b><br><br>
+         Double-click <code>Start Map.bat</code> in the project folder (or run <code>.venv\\Scripts\\python serve.py</code>).<br>It opens the map in your browser. Keep that window open.`
+      : `<b>${esc(err.message)}</b><br><br>The map data in <code>data/map/</code> may be missing — run <code>python build_map_data.py</code>.`;
+    lov.style.background = 'rgba(120,0,0,.93)';
+  }
+}
+load();
+</script>
+</body>
+</html>

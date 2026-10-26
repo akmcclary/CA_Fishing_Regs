@@ -1,0 +1,39 @@
+[
+  {
+    "name": "See Canyon Creek (San Luis Obispo Co.)",
+    "codes": ["7.40(b)(102)"], "primary_codes": ["7.40(b)(102)"],
+    "rules": {"7.40(b)(102)": {"title": "See Canyon Creek", "rows": [{"loc": "See Canyon Creek (San Luis Obispo Co.).", "season": "Closed to all fishing all year.", "bag": ""}]}},
+    "osm_names": ["See Canyon Creek"], "bbox": [-120.76, 35.15, -120.66, 35.26], "tributaries": false,
+    "note": "Not in CDFW's map data; geometry from OpenStreetMap, text from the 2026 booklet."
+  },
+  {
+    "name": "McLeod Lake (Mono Co.)",
+    "codes": ["7.50(b)(92)"], "primary_codes": ["7.50(b)(92)"],
+    "rules": {"7.50(b)(92)": {"title": "McLeod Lake", "rows": [{"loc": "McLeod Lake (Mono Co.).", "season": "All year. Only artificial lures with barbless hooks may be used.", "bag": "0 trout"}]}},
+    "osm_names": ["McLeod Lake"], "bbox": [-119.04, 37.60, -119.02, 37.615], "tributaries": false,
+    "note": "Not in CDFW's map data; geometry from OpenStreetMap, text from the 2026 booklet."
+  },
+  {
+    "name": "Redwood Creek (Humboldt Co.) and tributaries above the mouth of Bond Creek",
+    "codes": ["7.50(b)(117)"], "primary_codes": ["7.50(b)(117)"],
+    "rules": {"7.50(b)(117)": {"title": "Redwood Creek", "rows": [{"loc": "Redwood Creek (Humboldt Co.) and tributaries above the mouth of Bond Creek.", "season": "Closed to all fishing all year.", "bag": ""}]}},
+    "osm_names": ["Redwood Creek"], "bbox": [-124.10, 40.68, -123.55, 41.30], "tributaries": true,
+    "cut": {"by": "Bond Creek", "keep": "south"},
+    "note": "Not in CDFW's map data. Redwood Creek was cut at the Bond Creek confluence and every connected tributary upstream was traced in OpenStreetMap; text from the 2026 booklet."
+  },
+  {
+    "name": "Yét Atwam Creek (previously Squaw Valley Creek) and tributaries (Shasta Co.)",
+    "codes": ["7.50(b)(146)"], "primary_codes": ["7.50(b)(146)"],
+    "rules": {"7.50(b)(146)": {"title": "Yét Atwam Creek", "rows": [{"loc": "Yét Atwam Creek (Previously known as Sq. Valley Creek) and tributaries (Shasta Co.)", "season": "All year. Only artificial lures with barbless hooks may be used.", "bag": "0 trout"}]}},
+    "osm_names": ["Yét Atwam Creek"], "bbox": [-122.26, 41.02, -122.05, 41.40], "tributaries": true,
+    "exclude": ["McCloud River"],
+    "note": "Not in CDFW's map data; tributaries traced in OpenStreetMap, text from the 2026 booklet."
+  },
+  {
+    "name": "Sweetwater River and tributaries upstream of Sweetwater Reservoir (San Diego Co.)",
+    "codes": ["7.50(b)(151)"], "primary_codes": ["7.50(b)(151)"],
+    "rules": {"7.50(b)(151)": {"title": "Sweetwater River", "rows": [{"loc": "Sweetwater River and tributaries upstream of the Sweetwater Reservoir (San Diego Co.).", "season": "All year. Only artificial lures may be used.", "bag": "2 trout"}]}},
+    "osm_names": ["Sweetwater River"], "bbox": [-116.968, 32.64, -116.40, 33.05], "tributaries": true,
+    "note": "Not in CDFW's map data; tributaries traced in OpenStreetMap, text from the 2026 booklet."
+  }
+]

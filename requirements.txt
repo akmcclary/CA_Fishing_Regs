@@ -1,0 +1,5 @@
+pdfplumber
+rapidfuzz
+requests
+
+shapely>=2.0
