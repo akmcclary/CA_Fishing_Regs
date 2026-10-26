@@ -16,6 +16,10 @@ Every named stream is split wherever a regulation area begins or ends. Each piec
 
 Fishing hours, bait, gear, and species rules that cover the location are listed with every water.
 
+## Stocking layer
+
+The **Stocking** button adds CDFW hatchery plants as an optional layer. It loads live from the public layer behind the CDFW Fishing Guide (`FishingGuide/FeatureServer/2` on services2.arcgis.com), so it needs no rebuild. Each point is one water. Its color shows whether the water is scheduled, was planted this week, was planted in the last 3 weeks, or was planted earlier in the past 12 months. Selecting a lake or stream lists the stocking sites that belong to it.
+
 ## Repository layout
 
 | Path | Purpose |
@@ -60,4 +64,5 @@ The `.nojekyll` file tells Pages to serve the files as they are.
 * CDFW RFRService Feature Server (official reaches, areas, and regulation text)
 * OpenStreetMap named waterways, © OpenStreetMap contributors
 * 2026 Freshwater Sport Fishing Regulations booklet (CDFW)
+* CDFW Fish Planting Schedule (hatchery plants, queried live)
 * Basemaps: USGS The National Map and OpenStreetMap

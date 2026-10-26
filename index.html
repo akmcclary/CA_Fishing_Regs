@@ -24,12 +24,16 @@ header p{font-size:12px;color:var(--muted)}
 .row label{font-size:12px;color:var(--muted);white-space:nowrap}
 input[type=date],input[type=search]{font:inherit;padding:6px 8px;border:1px solid #cfd6d5;border-radius:6px;background:#fff;color:var(--ink);width:100%}
 input[type=search]{padding-left:10px}
-button{font:inherit;font-size:12px;padding:6px 10px;border:1px solid #cfd6d5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+button{white-space:nowrap;font:inherit;font-size:12px;padding:6px 10px;border:1px solid #cfd6d5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
 button:hover{background:#f0f3f2}
 button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}
 .sw{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .sw.thin{height:2px;opacity:.75}
+.cdot{display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px #c9d1d3;vertical-align:-1px;margin-right:5px}
+.cdot.sm{width:8px;height:8px}
+.plist{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px;margin-top:6px}
+.plist .up{color:#5f3dc4;font-weight:600}
 .tabs{display:flex;border-bottom:1px solid var(--line)}
 .tabs button{flex:1;border:0;border-radius:0;border-bottom:2px solid transparent;background:none;padding:9px 6px;font-weight:600;color:var(--muted)}
 .tabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:none}
@@ -127,10 +131,18 @@ details .count{color:var(--muted);font-weight:400}
       <span><i class="sw" style="background:var(--closed)"></i>Closed</span>
       <span><i class="sw thin" style="background:#4b8fb0"></i>Thin = general rules</span>
     </div>
-    <div class="row">
+    <div class="row" style="flex-wrap:wrap;gap:6px">
       <button id="tgDefault" class="on" title="Show waters under statewide / district general rules">General-rule waters</button>
       <button id="tgLakes" class="on">Lakes</button>
+      <button id="tgStock" title="CDFW hatchery plants, loaded live from the Fish Planting Schedule">Stocking</button>
       <button id="locate" title="Zoom to my location">📍 Near me</button>
+    </div>
+    <div class="legend" id="stockLegend" style="display:none">
+      <span><i class="cdot" style="background:#7048e8"></i>Scheduled</span>
+      <span><i class="cdot" style="background:#1971c2"></i>Planted this week</span>
+      <span><i class="cdot" style="background:#0c8599"></i>Last 3 weeks</span>
+      <span><i class="cdot sm" style="background:#74a9cf"></i>Earlier (past 12 months)</span>
+      <span id="stockMsg"></span>
     </div>
   </div>
   <div class="tabs"><button data-t="detail" class="on">Selected water</button><button data-t="special">Special-reg waters</button><button data-t="about">About</button></div>
@@ -253,7 +265,7 @@ function syncOverview(){
   const pending = want.some(k => tiles.get(k) === 'loading');
   const missing = manifest ? want.filter(k => tiles.get(k) === 'none') : [];
   const need = pending || missing.length > 0;
-  if (need && !map.hasLayer(overview.layer)) overview.layer.addTo(map);
+  if (need && !map.hasLayer(overview.layer)){ overview.layer.addTo(map); stockFront(); }
   if (!need && map.hasLayer(overview.layer)) map.removeLayer(overview.layer);
   warn.style.display = missing.length ? '' : 'none';
   if (missing.length) console.warn('Missing detail tiles:', missing.join(', '));
@@ -263,7 +275,7 @@ function refresh(){
   hint.style.display = z >= DETAIL_ZOOM ? 'none' : '';
   if (z < DETAIL_ZOOM){
     for (const t of tiles.values()) if (t.layer && map.hasLayer(t.layer)) map.removeLayer(t.layer);
-    if (overview && !map.hasLayer(overview.layer)) overview.layer.addTo(map);
+    if (overview && !map.hasLayer(overview.layer)){ overview.layer.addTo(map); stockFront(); }
     warn.style.display = 'none';
     return;
   }
@@ -271,14 +283,14 @@ function refresh(){
   for (const [k, t] of tiles) if (t.layer && !want.has(k) && map.hasLayer(t.layer)) map.removeLayer(t.layer);
   for (const k of want){
     const t = tiles.get(k);
-    if (t && t.layer){ if (!map.hasLayer(t.layer)) t.layer.addTo(map); continue; }
+    if (t && t.layer){ if (!map.hasLayer(t.layer)){ t.layer.addTo(map); stockFront(); } continue; }
     if (t === 'loading' || t === 'none') continue;
     tiles.set(k, 'loading');
     fetch(`data/map/tiles/${k}.json`).then(r => r.ok ? r.json() : null).then(fc => {
       if (!fc){ tiles.set(k, 'none'); return; }
       const layer = makeLayer(sortFc(fc));
       tiles.set(k, {layer, fc});
-      if (map.getZoom() >= DETAIL_ZOOM && tileKeys().includes(k)) layer.addTo(map);
+      if (map.getZoom() >= DETAIL_ZOOM && tileKeys().includes(k)){ layer.addTo(map); stockFront(); }
     }).catch(() => tiles.set(k, 'none')).finally(syncOverview);
   }
   syncOverview();
@@ -306,9 +318,12 @@ function insideRings(parts, p){
 function hitsAt(latlng){
   const pt = map.latLngToLayerPoint(latlng);
   const best = new Map();
-  for (const g of activeLayers()) g.eachLayer(l => {
-    if (!l._pxBounds || !l._containsPoint || !l._containsPoint(pt)) return;
+  const groups = activeLayers();
+  if (stockOn && stockLayer && map.hasLayer(stockLayer)) groups.push(stockLayer);
+  for (const g of groups) g.eachLayer(l => {
+    if (!l._containsPoint || !(l._pxBounds || l._point) || !l._containsPoint(pt)) return;
     const p = l.feature.properties;
+    if (p.k === 'P'){ best.set('P|' + p.site.id, {rank: -1, layer: l, f: l.feature}); return; }
     const poly = l instanceof L.Polygon;
     const inside = poly && insideRings(l._parts, pt);
     // The OSM lake outline carries the rule the build chose for the whole lake. CDFW
@@ -342,12 +357,176 @@ function restyleAll(){
   const redo = (t) => { const was = map.hasLayer(t.layer); if (was) map.removeLayer(t.layer); t.layer = makeLayer(t.fc); if (was) t.layer.addTo(map); };
   if (overview) redo(overview);
   for (const t of tiles.values()) if (t && t.layer) redo(t);
+  stockFront();
   if (selected) renderDetail(selected);
   renderSpecialList();
 }
 map.on('moveend zoomend', refresh);
 map.on('zoomend', () => { // line weights depend on zoom for special waters
   for (const t of tiles.values()) if (t && t.layer && map.hasLayer(t.layer)) t.layer.setStyle(f => styleFor(f.properties));
+});
+
+// ── Fish stocking (CDFW Fish Planting Schedule, queried live) ───────────────
+// Same public layer the CDFW Fishing Guide uses: one row per water per planting week,
+// covering the past 12 months plus the plants scheduled for the next couple of weeks.
+const STOCK_URL = 'https://services2.arcgis.com/Uq9r85Potqm3MfRV/arcgis/rest/services/FishingGuide/FeatureServer/2/query';
+const STOCK = {
+  week:     {color:'#1971c2', label:'Planted this week',          r:7,   op:.95, z:3},
+  upcoming: {color:'#7048e8', label:'Scheduled',                  r:7,   op:.95, z:2},
+  recent:   {color:'#0c8599', label:'Planted in the last 3 weeks', r:6,   op:.9,  z:1},
+  past:     {color:'#74a9cf', label:'Planted in the past 12 months', r:4.5, op:.85, z:0},
+};
+let stockSites = null, stockLayer = null, stockOn = false, stockLoadedAt = null;
+const dayOf = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+function todayStart(){ const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+function plantTiming(week){
+  const diff = Math.round((todayStart() - dayOf(week)) / 864e5);
+  return diff < 0 ? 'upcoming' : diff < 7 ? 'week' : diff < 28 ? 'recent' : 'past';
+}
+function weekLabel(week){
+  const a = dayOf(week), b = new Date(a); b.setDate(a.getDate() + 6);
+  const f = d => d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+  return `${f(a)} to ${f(b)}, ${b.getFullYear()}`;
+}
+async function loadStocking(){
+  const rows = [];
+  for (let offset = 0; ; ){
+    const q = new URLSearchParams({where:'1=1', outFields:'WaterName,Counties,FishType,WeekOfPlantStart,StockingWaterID,Lat,Lon',
+      returnGeometry:'false', orderByFields:'OBJECTID', resultOffset:String(offset), resultRecordCount:'2000', f:'json'});
+    const r = await fetch(`${STOCK_URL}?${q}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (j.error) throw new Error(j.error.message || 'query failed');
+    for (const f of j.features) rows.push(f.attributes);
+    if (!j.exceededTransferLimit || !j.features.length) break;
+    offset += j.features.length;
+  }
+  const by = new Map();
+  for (const a of rows){
+    if (a.Lat == null || a.Lon == null || !a.WeekOfPlantStart) continue;
+    const week = typeof a.WeekOfPlantStart === 'number' ? new Date(a.WeekOfPlantStart).toISOString().slice(0,10) : String(a.WeekOfPlantStart).slice(0,10);
+    const id = a.StockingWaterID ?? `${a.WaterName}|${a.Lat}|${a.Lon}`;
+    let s = by.get(id);
+    if (!s) by.set(id, s = {id, n: a.WaterName, county: a.Counties, lat: a.Lat, lng: a.Lon, plants: []});
+    s.plants.push({week, fish: a.FishType || 'Fish'});
+  }
+  const rank = {week:3, upcoming:2, recent:1, past:0};
+  for (const s of by.values()){
+    s.plants.sort((a,b) => b.week.localeCompare(a.week));
+    for (const p of s.plants) p.t = plantTiming(p.week);
+    s.t = s.plants.reduce((best, p) => rank[p.t] > rank[best] ? p.t : best, 'past');
+    s.next = s.plants.filter(p => p.t === 'upcoming').pop() || null;            // soonest scheduled
+    s.last = s.plants.find(p => p.t !== 'upcoming') || null;                     // most recent planted
+  }
+  stockLoadedAt = new Date();
+  return [...by.values()];
+}
+function makeStockLayer(){
+  const feats = stockSites.map(s => ({type:'Feature', geometry:{type:'Point', coordinates:[s.lng, s.lat]}, properties:{k:'P', n:s.n, site:s}}));
+  feats.sort((a,b) => STOCK[a.properties.site.t].z - STOCK[b.properties.site.t].z);   // newest plants drawn on top
+  return L.geoJSON({type:'FeatureCollection', features: feats}, {
+    pointToLayer: (f, ll) => { const t = STOCK[f.properties.site.t];
+      return L.circleMarker(ll, {renderer, radius: t.r, color:'#fff', weight:1.5, opacity:1, fillColor: t.color, fillOpacity: t.op}); },
+    onEachFeature: (f, l) => { const s = f.properties.site;
+      l.bindTooltip(`${esc(s.n)} · ${STOCK[s.t].label}`, {className:'wt', direction:'top', offset:[0,-6]}); }
+  });
+}
+function stockFront(){ if (stockOn && stockLayer && map.hasLayer(stockLayer)) stockLayer.eachLayer(l => l.bringToFront()); }
+const stockBtn = document.getElementById('tgStock'), stockMsg = document.getElementById('stockMsg');
+async function setStocking(on){
+  stockOn = on;
+  try { localStorage.setItem('stockOn', on ? '1' : '0'); } catch (e) {}
+  stockBtn.classList.toggle('on', on);
+  document.getElementById('stockLegend').style.display = on ? '' : 'none';
+  if (on && !stockSites){
+    stockBtn.disabled = true; stockMsg.textContent = 'Loading CDFW planting schedule…';
+    try {
+      stockSites = await loadStocking();
+      stockLayer = makeStockLayer();
+      stockMsg.textContent = `${stockSites.length} waters, as of ${stockLoadedAt.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
+    } catch (err) {
+      console.error('Stocking layer:', err);
+      stockMsg.textContent = 'The CDFW planting schedule could not be loaded. Try again later.';
+      stockOn = false; stockBtn.classList.remove('on');
+    } finally { stockBtn.disabled = false; }
+  }
+  if (stockLayer){
+    if (stockOn && !map.hasLayer(stockLayer)) stockLayer.addTo(map);
+    if (!stockOn && map.hasLayer(stockLayer)) map.removeLayer(stockLayer);
+    stockFront();
+  }
+  if (selected) renderDetail(selected);
+}
+stockBtn.onclick = () => setStocking(!stockOn);
+
+// Stocking sites that belong to the selected water: inside the lake outline, or near the
+// selected stream with a shared name word ("Kern River, Section 4" ↔ "Kern River").
+const NAME_SKIP = new Set(['lake','lakes','reservoir','river','creek','pond','ponds','fork','north','south','east','west','middle',
+  'upper','lower','section','the','of','and','below','above','dam','at','in','park','regional','county','lagoon','forebay','afterbay','little','big']);
+const nameWords = n => new Set(String(n).toLowerCase().replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(w => w.length > 1 && !NAME_SKIP.has(w) && !/^(i|ii|iii|iv|v|vi|\d+)$/.test(w)));
+function inGeom(g, x, y){
+  const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+  for (const poly of polys){
+    let inside = false;
+    for (const ring of poly)
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+        const [xi, yi] = ring[i], [xj, yj] = ring[j];
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+      }
+    if (inside) return true;
+  }
+  return false;
+}
+let selectedFeats = [];
+function stockingFor(p){
+  if (!stockOn || !stockSites || p.k === 'P' || !selectedFeats.length) return [];
+  const b = L.geoJSON({type:'FeatureCollection', features: selectedFeats}).getBounds().pad(0.05);
+  const words = nameWords(p.n);
+  return stockSites.filter(s => {
+    if (!b.contains([s.lat, s.lng])) return false;
+    if ((p.k === 'l' || p.k === 'L') && selectedFeats.some(f => inGeom(f.geometry, s.lng, s.lat))) return true;
+    for (const w of nameWords(s.n)) if (words.has(w)) return true;
+    return false;
+  });
+}
+function plantsHtml(s){
+  return `<div class="plist">` + s.plants.map(p =>
+    `<span class="${p.t === 'upcoming' ? 'up' : ''}">${esc(weekLabel(p.week))}</span><span>${esc(p.fish)}${p.t === 'upcoming' ? ' · scheduled' : ''}</span>`).join('') + `</div>`;
+}
+function siteSummary(s){
+  const bits = [];
+  if (s.next) bits.push(`Next: week of ${weekLabel(s.next.week)}`);
+  if (s.last) bits.push(`Last: week of ${weekLabel(s.last.week)}`);
+  const n = s.plants.filter(p => p.t !== 'upcoming').length;
+  bits.push(n ? `${n} plant${n > 1 ? 's' : ''} in the past 12 months` : 'No plants in the past 12 months');
+  return bits.join(' · ');
+}
+function stockingCardHtml(p){
+  const list = stockingFor(p);
+  if (!list.length) return '';
+  return `<div class="card"><h3>Fish stocking</h3><div class="sl" id="stockhere">` + list.map(s =>
+    `<div data-sid="${esc(s.id)}"><span class="dot" style="background:${STOCK[s.t].color}"></span><span><span class="nm">${esc(s.n)}</span><br><span class="sb">${esc(siteSummary(s))}</span></span></div>`).join('') +
+    `</div><div class="src">CDFW Fish Planting Schedule. Plants can change with road, water, weather, and operating conditions.</div></div>`;
+}
+function renderStockDetail(p){
+  const s = p.site, t = STOCK[s.t];
+  let h = `<div class="dname">${esc(s.n)}</div>
+    <div class="dmeta">Fish stocking site${s.county ? ' · ' + esc(s.county) + ' County' : ''}</div>
+    <div><span class="pill" style="background:${t.color}1f;color:${t.color}">${esc(t.label)}</span></div>
+    <div class="card"><h3>Hatchery plants</h3><div class="src" style="margin:0 0 4px">${esc(siteSummary(s))}</div>${plantsHtml(s)}
+    <div class="note">Plants are subject to change due to road, water, weather, and operational conditions. The schedule lists the week of each plant, not the day.</div>
+    <div class="src">Source: CDFW Fish Planting Schedule, loaded ${esc(stockLoadedAt.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}.
+      <a href="https://nrm.dfg.ca.gov/FishPlants/PublicPlantSearch" target="_blank" rel="noopener">CDFW Fish Planting Schedule</a></div></div>`;
+  h += alsoHereHtml();
+  if (!here.length) h += `<div class="src">Click the water itself to see its fishing regulations.</div>`;
+  document.getElementById('p-detail').innerHTML = h;
+}
+document.getElementById('p-detail').addEventListener('click', ev => {
+  const d = ev.target.closest('#stockhere div[data-sid]');
+  if (!d || !stockLayer) return;
+  let layer = null;
+  stockLayer.eachLayer(l => { if (!layer && String(l.feature.properties.site.id) === d.dataset.sid) layer = l; });
+  if (layer) select(layer.feature, layer, [layer.feature, ...(here.length ? here : [selectedF]).filter(f => f && f.properties.k !== 'P')]);
 });
 
 // ── Selection & detail ──────────────────────────────────────────────────────
@@ -370,14 +549,17 @@ function piecesOf(f, layer){
   }
   return group.map(l => l.feature);
 }
+let selectedF = null;
 function select(f, layer, list){
-  selected = f.properties;
+  selected = f.properties; selectedF = f;
   here = list && list.length > 1 ? list : [];
   hl.clearLayers();
-  const fc = {type:'FeatureCollection', features: piecesOf(f, layer)};
+  selectedFeats = f.properties.k === 'P' ? [f] : piecesOf(f, layer);
+  const fc = {type:'FeatureCollection', features: selectedFeats};
   // same canvas as the data: a second canvas on top would swallow hover and clicks
-  L.geoJSON(fc, {renderer, style: {color:'#ffe066', weight: 12, opacity: .55, fillOpacity:.15, fillColor:'#ffe066'}, interactive:false}).addTo(hl);
-  L.geoJSON(fc, {renderer, style: {color:'#111', weight: 2, opacity: .9, dashArray:'4 4', fill:false}, interactive:false}).addTo(hl);
+  const ring = (o) => (ft, ll) => L.circleMarker(ll, {renderer, radius: 11, ...o, interactive:false});
+  L.geoJSON(fc, {renderer, pointToLayer: ring({color:'#ffe066', weight:6, opacity:.8, fill:false}), style: {color:'#ffe066', weight: 12, opacity: .55, fillOpacity:.15, fillColor:'#ffe066'}, interactive:false}).addTo(hl);
+  L.geoJSON(fc, {renderer, pointToLayer: ring({color:'#111', weight:2, opacity:.9, dashArray:'3 3', fill:false}), style: {color:'#111', weight: 2, opacity: .9, dashArray:'4 4', fill:false}, interactive:false}).addTo(hl);
   showTab('detail');
   renderDetail(selected);
 }
@@ -387,6 +569,8 @@ function alsoHereHtml(){
   const rows = here.map((f, i) => {
     const p = f.properties;
     if (p === selected) return '';
+    if (p.k === 'P'){ const s = p.site;
+      return `<div data-h="${i}"><span class="dot" style="background:${STOCK[s.t].color}"></span><span><span class="nm">${esc(s.n)}</span><br><span class="sb">fish stocking site · ${esc(STOCK[s.t].label)}</span></span></div>`; }
     const st = statusOf(p);
     return `<div data-h="${i}"><span class="dot" style="background:${COLOR[st]}"></span><span><span class="nm">${esc(p.n)}</span><br><span class="sb">${esc(KIND[p.k]||'')} · ${esc(LABEL[st])}</span></span></div>`;
   }).join('');
@@ -397,7 +581,8 @@ document.getElementById('p-detail').addEventListener('click', ev => {
   if (!d) return;
   const f = here[+d.dataset.h];
   let layer = null;
-  for (const g of activeLayers()) g.eachLayer(l => { if (!layer && l.feature === f) layer = l; });
+  const groups = activeLayers(); if (stockLayer) groups.push(stockLayer);
+  for (const g of groups) g.eachLayer(l => { if (!layer && l.feature === f) layer = l; });
   select(f, layer, here);
 });
 function rowsHtml(rows){
@@ -441,6 +626,7 @@ function calendar(days){
 function dateLabel(k){ const d = new Date(YEAR,0,1+k); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
 
 function renderDetail(p){
+  if (p.k === 'P') return renderStockDetail(p);
   const rg = regimes[p.r], rs = rulesets[p.s];
   const st = statusOf(p);
   const kindName = {r:'River', s:'Stream', l:'Lake / reservoir', S:'Special-regulation reach', L:'Special-regulation lake', A:'Special-regulation area'}[p.k] || '';
@@ -466,6 +652,7 @@ function renderDetail(p){
     if (rg.note) gov += `<div class="note">${esc(rg.note)}</div>`;
   }
   h += `<div class="card">${gov}${calendar(rg.days)}</div>`;
+  h += stockingCardHtml(p);
   h += alsoHereHtml();
 
   // Everything else that applies here
@@ -669,6 +856,7 @@ function renderAbout(){
       <li>Only named streams are drawn (OpenStreetMap). Unnamed tributaries follow the same rules as the area they are in.</li>
       <li>"Anadromous waters" rules are shown where CDFW maps them; the exact barrier where they stop is not mapped.</li>
       <li>Emergency closures and in-season changes are not included.</li>
+      <li>The Stocking layer loads live from the CDFW Fish Planting Schedule each time you turn it on. It shows the week of each hatchery plant for the past 12 months and the plants scheduled for the next few weeks. Each water is one generalized point.</li>
     </ul>
     <p class="src">Data: ${esc((m.sources||[]).join('; '))}. Built ${esc(m.generated||'')}.</p>`;
 }
@@ -694,6 +882,9 @@ async function load(){
     renderFilters(); renderSpecialList(); renderAbout();
     refresh();
     lov.style.display = 'none';
+    let wantStock = false;
+    try { wantStock = localStorage.getItem('stockOn') === '1'; } catch (e) {}
+    if (wantStock) setStocking(true);
   } catch (err) {
     lov.querySelector('.spin').style.display = 'none';
     lov.querySelector('h2').textContent = 'Error loading data';
