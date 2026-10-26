@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f8b">
 <title>CA Fishing Regulations Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -43,7 +44,7 @@ button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .empty{color:var(--muted);font-size:13px;padding:8px 0}
 .empty b{color:var(--ink)}
 /* search results */
-#results{position:absolute;left:16px;right:16px;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:340px;overflow:auto;z-index:2000;display:none}
+#results{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:340px;overflow:auto;z-index:2000;display:none}
 #results div{padding:7px 10px;cursor:pointer;border-bottom:1px solid #f1f3f3;font-size:13px}
 #results div:hover,#results div.hi{background:#eef6f9}
 #results small{color:var(--muted)}
@@ -100,10 +101,44 @@ details .count{color:var(--muted);font-weight:400}
 .leaflet-tooltip.wt{font:600 12px system-ui;padding:3px 7px}
 .zoomhint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);border:1px solid var(--line);padding:6px 12px;border-radius:999px;font-size:12px;z-index:900;box-shadow:0 2px 8px rgba(0,0,0,.1);pointer-events:none}
 .zoomhint.warn{background:#fff8e6;border-color:#f1d58c;color:#5c4710;max-width:80%;text-align:center}
+.srow{display:flex;gap:8px;align-items:center}
+.srow .sbox{flex:1;min-width:0}
+.more{display:grid;gap:8px}
+#moreBtn,.grab{display:none}
+/* ── Phones: full-screen map with a draggable bottom sheet ── */
 @media (max-width:760px){
-  body{flex-direction:column-reverse}
-  #side{width:100%;min-width:0;height:48vh;border-right:0;border-top:1px solid var(--line)}
-  #map{height:52vh}
+  :root{--peek:118px}
+  body{display:block}
+  #map{position:fixed;inset:0;width:100%;height:100vh;height:100dvh}
+  #side{position:fixed;left:0;right:0;bottom:0;width:100%;min-width:0;height:calc(var(--peek) + env(safe-area-inset-bottom));max-height:94dvh;border:0;
+        border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18);transition:height .22s ease;
+        padding-bottom:env(safe-area-inset-bottom);overscroll-behavior:contain}
+  #side[data-snap=half]{height:52vh;height:52dvh}
+  #side[data-snap=full]{height:94vh;height:94dvh}
+  #side.dragging{transition:none}
+  header{padding:4px 16px 4px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+  .grab{display:block;width:40px;height:5px;border-radius:3px;background:#c9d1d3;margin:2px auto 6px}
+  header h1{font-size:14.5px;text-align:center}
+  header p{display:none}
+  .controls{padding:6px 12px 10px;border-bottom:0}
+  #moreBtn{display:inline-block;flex:none}
+  .srow{position:relative}
+  .srow .sbox{position:static}            /* results drop down across the full row */
+  .more{display:none;padding-top:4px}
+  .more.open{display:grid}
+  #side[data-snap=peek] .tabs{visibility:hidden}
+  input[type=date],input[type=search]{font-size:16px;padding:9px 10px}   /* 16px stops iOS zoom on focus */
+  button{font-size:14px;padding:9px 12px;min-height:40px}
+  .tabs button{min-height:44px;font-size:13.5px}
+  .pane{padding:12px 14px calc(24px + env(safe-area-inset-bottom))}
+  #results{max-height:50dvh}
+  #results div{padding:11px 12px}
+  .sl div{padding:10px 0}
+  details summary{padding:6px 0}
+  .zoomhint{top:12px;bottom:auto;max-width:62%;text-align:center}
+  .leaflet-top.leaflet-left{top:env(safe-area-inset-top)}
+  .leaflet-control-layers-toggle{width:40px;height:40px}
+  .leaflet-touch .leaflet-bar a{width:38px;height:38px;line-height:38px}
 }
 </style>
 </head>
@@ -111,15 +146,20 @@ details .count{color:var(--muted);font-weight:400}
 <div id="loading"><div class="spin"></div><h2>Loading regulation data…</h2><p id="lmsg">rules.json</p></div>
 
 <aside id="side">
-  <header>
+  <header id="sheetHead">
+    <div class="grab" aria-hidden="true"></div>
     <h1>California Freshwater Fishing Regulations</h1>
-    <p>2026 regulations · click any stream or lake to see every rule that applies there</p>
+    <p>2026 regulations · select any stream or lake to see every rule that applies there</p>
   </header>
   <div class="controls">
-    <div class="sbox">
-      <input type="search" id="q" placeholder="Search a stream, river or lake…" autocomplete="off">
-      <div id="results"></div>
+    <div class="srow">
+      <div class="sbox">
+        <input type="search" id="q" placeholder="Search a stream, river or lake…" autocomplete="off" enterkeyhint="search">
+        <div id="results"></div>
+      </div>
+      <button id="moreBtn" aria-expanded="false" aria-controls="more">Date &amp; layers</button>
     </div>
+    <div class="more" id="more">
     <div class="row">
       <label for="date">Status on</label>
       <input type="date" id="date" min="2026-01-01" max="2026-12-31">
@@ -144,11 +184,12 @@ details .count{color:var(--muted);font-weight:400}
       <span><i class="cdot sm" style="background:#74a9cf"></i>Earlier (past 12 months)</span>
       <span id="stockMsg"></span>
     </div>
+    </div>
   </div>
   <div class="tabs"><button data-t="detail" class="on">Selected water</button><button data-t="special">Special-reg waters</button><button data-t="about">About</button></div>
   <div id="body">
     <div class="pane on" id="p-detail">
-      <div class="empty"><b>Click a stream or lake</b> on the map, or search above.<br><br>
+      <div class="empty"><b>Tap or click a stream or lake</b> on the map, or search above.<br><br>
       Thick lines are waters with their own special regulations (§7.40 / §7.50). Thin lines follow the district or statewide general rules. Colors show whether fishing is open on the date above.<br><br>
       Zoom in past the county level to see every named stream.</div>
     </div>
@@ -189,8 +230,11 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 const sec = c => (c.match(/^\d+\.\d+/)||[''])[0];
 
 // ── Map ──────────────────────────────────────────────────────────────────────
-const map = L.map('map', {preferCanvas:true, zoomControl:true}).setView([37.4, -119.6], 6);
-const renderer = L.canvas({tolerance: 7, padding: .3});
+const MOBILE = matchMedia('(max-width:760px)');
+const HOVER = matchMedia('(hover: hover)').matches;      // no hover tooltips on touch screens
+const map = L.map('map', {preferCanvas:true, zoomControl:true, tapTolerance: 20}).setView([37.4, -119.6], MOBILE.matches ? 5 : 6);
+const renderer = L.canvas({tolerance: HOVER ? 7 : 14, padding: .3});   // bigger hit area for fingers
+if (MOBILE.matches){ map.attributionControl.setPosition('topright'); document.getElementById('q').placeholder = 'Search streams and lakes'; }
 const bases = {
   'Topo (USGS)': L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', {maxZoom:16, maxNativeZoom:16, attribution:'USGS The National Map'}),
   'Streets (OSM)': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap contributors'}),
@@ -235,7 +279,7 @@ function makeLayer(fc){
     filter: f => visible(f.properties),
     style: f => styleFor(f.properties),
     onEachFeature: (f, layer) => {
-      layer.bindTooltip(f.properties.n, {sticky:true, className:'wt', direction:'top', offset:[0,-6]});
+      if (HOVER) layer.bindTooltip(f.properties.n, {sticky:true, className:'wt', direction:'top', offset:[0,-6]});
     }
   });
 }
@@ -349,8 +393,9 @@ function pickAt(e){
   if (e.originalEvent && e.originalEvent === lastClickEv) return;
   lastClickEv = e.originalEvent;
   const h = hitsAt(e.latlng);
-  if (!h.length) return;
+  if (!h.length){ if (MOBILE.matches && sheetSnap() !== 'peek') setSnap('peek'); return; }
   select(h[0].f, h[0].layer, h.map(x => x.f));
+  keepAboveSheet(e.latlng);
 }
 map.on('click', pickAt);
 function restyleAll(){
@@ -428,7 +473,7 @@ function makeStockLayer(){
     pointToLayer: (f, ll) => { const t = STOCK[f.properties.site.t];
       return L.circleMarker(ll, {renderer, radius: t.r, color:'#fff', weight:1.5, opacity:1, fillColor: t.color, fillOpacity: t.op}); },
     onEachFeature: (f, l) => { const s = f.properties.site;
-      l.bindTooltip(`${esc(s.n)} · ${STOCK[s.t].label}`, {className:'wt', direction:'top', offset:[0,-6]}); }
+      if (HOVER) l.bindTooltip(`${esc(s.n)} · ${STOCK[s.t].label}`, {className:'wt', direction:'top', offset:[0,-6]}); }
   });
 }
 function stockFront(){ if (stockOn && stockLayer && map.hasLayer(stockLayer)) stockLayer.eachLayer(l => l.bringToFront()); }
@@ -443,7 +488,7 @@ async function setStocking(on){
     try {
       stockSites = await loadStocking();
       stockLayer = makeStockLayer();
-      stockMsg.textContent = `${stockSites.length} waters, as of ${stockLoadedAt.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
+      stockMsg.textContent = `${stockSites.length} water${stockSites.length === 1 ? '' : 's'}, as of ${stockLoadedAt.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
     } catch (err) {
       console.error('Stocking layer:', err);
       stockMsg.textContent = 'The CDFW planting schedule could not be loaded. Try again later.';
@@ -562,6 +607,8 @@ function select(f, layer, list){
   L.geoJSON(fc, {renderer, pointToLayer: ring({color:'#111', weight:2, opacity:.9, dashArray:'3 3', fill:false}), style: {color:'#111', weight: 2, opacity: .9, dashArray:'4 4', fill:false}, interactive:false}).addTo(hl);
   showTab('detail');
   renderDetail(selected);
+  document.getElementById('body').scrollTop = 0;
+  if (MOBILE.matches && sheetSnap() !== 'full') setSnap('half');
 }
 function alsoHereHtml(){
   if (!here.length) return '';
@@ -704,12 +751,72 @@ function renderDetail(p){
   document.getElementById('p-detail').innerHTML = h;
 }
 
+// ── Bottom sheet (phones) ────────────────────────────────────────────────────
+const side = document.getElementById('side'), head = document.getElementById('sheetHead');
+const SNAPS = ['peek', 'half', 'full'];
+function sheetSnap(){ return side.dataset.snap || 'peek'; }
+function setSnap(s){ side.dataset.snap = s; side.style.height = ''; }
+function snapHeights(){
+  const peek = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peek')) || 118;
+  const vh = window.innerHeight;
+  return {peek, half: vh * .52, full: vh * .94};
+}
+// Pixels of map hidden under the sheet once it opens to half height
+function sheetCover(){ return MOBILE.matches ? Math.round(window.innerHeight * .52) : 0; }
+function keepAboveSheet(latlng){
+  if (!MOBILE.matches) return;
+  const y = map.latLngToContainerPoint(latlng).y, visible = window.innerHeight - sheetCover();
+  if (y > visible - 40) map.panBy([0, y - visible / 2]);
+}
+let drag = null;
+head.addEventListener('pointerdown', ev => {
+  if (!MOBILE.matches) return;
+  drag = {y0: ev.clientY, h0: side.getBoundingClientRect().height, moved: false, t0: performance.now()};
+  side.classList.add('dragging');
+  head.setPointerCapture(ev.pointerId);
+});
+head.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const dy = ev.clientY - drag.y0;
+  if (Math.abs(dy) > 6) drag.moved = true;
+  const H = snapHeights();
+  side.style.height = Math.max(H.peek, Math.min(H.full, drag.h0 - dy)) + 'px';
+});
+function endDrag(ev){
+  if (!drag) return;
+  side.classList.remove('dragging');
+  const cur = sheetSnap();
+  if (!drag.moved){                                   // tap on the handle: step open, or close from full
+    setSnap(cur === 'peek' ? 'half' : cur === 'half' ? 'full' : 'half');
+  } else {
+    const H = snapHeights(), h = side.getBoundingClientRect().height;
+    const v = (drag.y0 - ev.clientY) / Math.max(1, performance.now() - drag.t0);   // px/ms, up is positive
+    let best = SNAPS.reduce((a, b) => Math.abs(H[b] - h) < Math.abs(H[a] - h) ? b : a);
+    // a quick flick that would land back where it started moves one step instead
+    if (Math.abs(v) > .5 && best === cur){ const i = SNAPS.indexOf(cur); best = SNAPS[Math.max(0, Math.min(2, i + (v > 0 ? 1 : -1)))]; }
+    setSnap(best);
+  }
+  drag = null;
+}
+head.addEventListener('pointerup', endDrag);
+head.addEventListener('pointercancel', endDrag);
+const moreBtn = document.getElementById('moreBtn'), moreEl = document.getElementById('more');
+moreBtn.onclick = () => {
+  const open = !moreEl.classList.contains('open');
+  moreEl.classList.toggle('open', open);
+  moreBtn.setAttribute('aria-expanded', open);
+  moreBtn.classList.toggle('on', open);
+  if (open && sheetSnap() === 'peek') setSnap('half');
+};
+MOBILE.addEventListener('change', () => { setSnap('peek'); setTimeout(() => map.invalidateSize(), 250); });
+setSnap('peek');
+
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 function showTab(t){
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
 }
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { showTab(b.dataset.t); if (MOBILE.matches && sheetSnap() === 'peek') setSnap('half'); });
 
 // ── Search ───────────────────────────────────────────────────────────────────
 let S = [];
@@ -743,8 +850,10 @@ function doSearch(){
 function goTo(e){
   resEl.style.display = 'none';
   const b = e[5];
-  if (b && b[2] - b[0] > 0.002) map.fitBounds([[b[1], b[0]], [b[3], b[2]]], {maxZoom: 13, padding:[30,30]});
-  else map.setView([e[1], e[2]], 13);
+  if (MOBILE.matches){ qEl.blur(); setSnap('half'); }
+  const pad = sheetCover();     // keep the water clear of the bottom sheet on phones
+  if (b && b[2] - b[0] > 0.002) map.fitBounds([[b[1], b[0]], [b[3], b[2]]], {maxZoom: 13, paddingTopLeft:[30,30], paddingBottomRight:[30, 30 + pad]});
+  else { map.setView([e[1], e[2]], 13); if (pad) map.panBy([0, pad / 2], {animate:false}); }
   // select once the water is on screen (overview at low zoom, a detail tile at high zoom)
   const tryPick = (n) => {
     const busy = map.getZoom() >= DETAIL_ZOOM && tileKeys().some(k => tiles.get(k) === 'loading');
@@ -764,6 +873,7 @@ function goTo(e){
   setTimeout(() => tryPick(15), 400);
 }
 qEl.addEventListener('input', doSearch);
+qEl.addEventListener('focus', () => { if (MOBILE.matches) setSnap('full'); });
 qEl.addEventListener('keydown', ev => {
   const items = resEl.querySelectorAll('div[data-i]');
   if (ev.key === 'ArrowDown'){ hi = Math.min(hi+1, items.length-1); }
@@ -834,7 +944,7 @@ dateEl.addEventListener('change', () => { const [y,m,d] = dateEl.value.split('-'
 document.getElementById('today').onclick = () => { setDate(new Date()); renderFilters(); restyleAll(); };
 document.getElementById('tgDefault').onclick = function(){ showDefault = !showDefault; this.classList.toggle('on', showDefault); restyleAll(); };
 document.getElementById('tgLakes').onclick = function(){ showLakes = !showLakes; this.classList.toggle('on', showLakes); restyleAll(); };
-document.getElementById('locate').onclick = () => map.locate({setView:true, maxZoom:12});
+document.getElementById('locate').onclick = () => { if (MOBILE.matches) setSnap('peek'); map.locate({setView:true, maxZoom:12}); };
 map.on('locationerror', () => alert('Could not get your location.'));
 
 // ── About ────────────────────────────────────────────────────────────────────
